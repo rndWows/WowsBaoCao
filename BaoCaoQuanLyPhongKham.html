@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thống kê công việc</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/10.3.3/highcharts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+</head>
+<script>
+    tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                colors: {
+                    primary: '#3B82F6',
+                    secondary: '#10B981',
+                    accent: '#8B5CF6',
+                    warning: '#FBBF24',
+                    danger: '#EF4444',
+                }
+            }
+        }
+    }
+</script>
+
+<body class="bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
+    <div class="fixed top-0 left-0 right-0 z-10">
+        <nav class="bg-white dark:bg-gray-800 shadow-md">
+            <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+                <div class="flex items-center">
+                    <img src="" alt="Logo bệnh viện"
+                        class="h-8 mr-4">
+                    <h1 class="text-2xl font-bold text-primary dark:text-white">Thống kê khám bệnh</h1>
+                </div>
+                <button id="darkModeToggle"
+                    class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 transition-colors duration-300">
+                    <i class="fas fa-moon text-gray-800 dark:text-white"></i>
+                </button>
+            </div>
+        </nav>
+
+        <div class="bg-white dark:bg-gray-800 shadow-md">
+            <div class="container mx-auto px-4 py-3">
+                <h2 class="text-xl font-semibold mb-2 text-gray-800 dark:text-white">Bộ lọc</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <select id="doctorFilter"
+                        class="w-full p-2 border rounded-md bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary transition-all duration-300">
+                        <option value="">Bác sĩ phụ trách</option>
+                    </select>
+                    <select id="dateRangeFilter"
+                        class="w-full p-2 border rounded-md bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary transition-all duration-300">
+                        <option value="">Chọn phạm vi ngày</option>
+                    </select>
+                    <select id="diagnosisFilter"
+                        class="w-full p-2 border rounded-md bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary transition-all duration-300">
+                        <option value="">Chuẩn đoán</option>
+                    </select>
+                    <button id="resetFilters"
+                        class="w-full bg-primary text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                        <i class="fas fa-sync-alt mr-2"></i>Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br>
+    <br>
+    <br>
+    <br>
+    <div class="container mx-auto px-4 py-20">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-2 text-gray-800 dark:text-white">Tổng số bệnh nhân</h2>
+                <p class="text-3xl font-bold text-blue-600 dark:text-blue-400" id="totalPatients">0</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-2 text-gray-800 dark:text-white">Tổng doanh thu</h2>
+                <p class="text-3xl font-bold text-green-600 dark:text-green-400" id="totalRevenue">0 ₫</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-2 text-gray-800 dark:text-white">Số lượt khám hôm nay</h2>
+                <p class="text-3xl font-bold text-purple-600 dark:text-purple-400" id="todayVisits">0</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-2 text-gray-800 dark:text-white">Tuổi trung bình</h2>
+                <p class="text-3xl font-bold text-orange-600 dark:text-orange-400" id="averageAge">0</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Doanh thu theo ngày</h2>
+                <div id="revenueChart" style="height: 300px;"></div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Phân bố giới tính</h2>
+                <div id="genderChart" style="height: 300px;"></div>
+            </div>
+        </div>
+
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Phân bố độ tuổi bệnh nhân</h2>
+                <div id="ageDistributionChart" style="height: 300px;"></div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Phân bố chiều cao và cân nặng</h2>
+                <div id="weightHeightChart" style="height: 300px;"></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Hiệu suất bác sĩ</h2>
+                <div id="doctorPerformanceChart" style="height: 300px;"></div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Top 10 chuẩn đoán phổ biến</h2>
+                <div id="diagnosisDistributionChart" style="height: 300px;"></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Phân tích doanh thu</h2>
+                <div id="revenueBreakdownChart" style="height: 300px;"></div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Phân bố thời gian khám</h2>
+                <div id="timeOfDayChart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const htmlElement = document.documentElement;
+        const appId = 'dfef8b09-1018-4848-ae9d-25280be95839';
+        const accessKey = 'V2-VqkfF-dbx94-PlLat-VxwHQ-OtETE-m0Usk-n6pgY-Am5b3';
+        const region = 'www';
+
+        let allData = [];
+        let filteredData = [];
+
+        function toggleDarkMode() {
+            htmlElement.classList.toggle('dark');
+            updateDashboard();
+            const isDarkMode = htmlElement.classList.contains('dark');
+            localStorage.setItem('darkMode', isDarkMode);
+            updateDarkModeIcon();
+        }
+
+        function updateDarkModeIcon() {
+            const isDarkMode = htmlElement.classList.contains('dark');
+            darkModeToggle.innerHTML = isDarkMode
+                ? '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>'
+                : '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-800 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>';
+        }
+
+        darkModeToggle.addEventListener('click', toggleDarkMode);
+
+        function apiRequest(tableName, action, data) {
+            const apiUrl = `https://${region}.appsheet.com/api/v2/apps/${appId}/tables/${tableName}/Action`;
+            return fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'ApplicationAccessKey': accessKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    Action: action,
+                    Properties: {},
+                    ...data
+                })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("API response:", data);
+                    return data;
+                })
+                .catch(error => {
+                    console.error("Lỗi API:", error);
+                    throw error;
+                });
+        }
+
+        async function fetchDataFromAppSheet() {
+            try {
+                const response = await apiRequest('KHAMBENH', 'Find', {
+                    Selector: "Filter(KHAMBENH, true)"
+                });
+                if (!Array.isArray(response) || response.length === 0) {
+                    console.error("Không nhận được dữ liệu hợp lệ từ API:", response);
+                    throw new Error("Dữ liệu không hợp lệ");
+                }
+                allData = response;
+                console.log("Data fetched from AppSheet:", allData);
+                return allData;
+            } catch (error) {
+                console.error("Lỗi khi lấy dữ liệu từ AppSheet:", error);
+                throw error;
+            }
+        }
+
+        function initializeDarkMode() {
+            const savedMode = localStorage.getItem('darkMode');
+            if (savedMode !== null) {
+                htmlElement.classList.toggle('dark', savedMode === 'true');
+            } else {
+                const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                htmlElement.classList.toggle('dark', prefersDarkMode);
+            }
+            updateDarkModeIcon();
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        }
+
+        function updateDashboard() {
+            updateExtendedDashboard();
+            const data = filteredData.length > 0 ? filteredData : allData;
+            console.log("Revenue by date:", data)
+            // Cập nhật tổng số bệnh nhân
+            document.getElementById('totalPatients').textContent = data.length;
+
+            // Tính tổng doanh thu
+            const totalRevenue = data.reduce((sum, record) => sum + parseInt(record['Tổng'] || 0), 0);
+            document.getElementById('totalRevenue').textContent = formatCurrency(totalRevenue);
+
+            // Đếm số lượt khám hôm nay
+            const today = moment().format('MM/DD/YYYY');
+            const todayVisits = data.filter(record => moment(record['Ngày khám'], 'MM/DD/YYYY HH:mm:ss').format('MM/DD/YYYY') === today).length;
+            document.getElementById('todayVisits').textContent = todayVisits;
+
+            // Tính tuổi trung bình
+            const averageAge = data.reduce((sum, record) => {
+                const age = parseInt(record['Tuổi'].split(' ')[0]);
+                return sum + (isNaN(age) ? 0 : age);
+            }, 0) / data.length;
+            document.getElementById('averageAge').textContent = averageAge.toFixed(1);
+
+            // Tạo đối tượng để lưu trữ doanh thu theo ngày
+            const revenueByDate = data.reduce((acc, record) => {
+                const date = moment(record['Ngày khám'], 'MM/DD/YYYY HH:mm:ss').format('YYYY-MM-DD');
+                acc[date] = (acc[date] || 0) + parseInt(record['Tổng'] || 0);
+                return acc;
+            }, {});
+
+            // Sắp xếp các ngày theo thứ tự tăng dần
+            const sortedDates = Object.keys(revenueByDate).sort((a, b) => moment(a).diff(moment(b)));
+
+            // Tính toán doanh thu lũy kế
+            let cumulativeRevenue = 0;
+            const cumulativeData = sortedDates.map(date => {
+                cumulativeRevenue += revenueByDate[date];
+                return cumulativeRevenue;
+            });
+
+            Highcharts.chart('revenueChart', {
+                chart: {
+                    type: 'column'
+                },
+                title: {
+                    text: 'Biểu đồ doanh thu',
+                    align: 'left',
+                    style: {
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        color: '#222831'
+                    }
+                },
+                xAxis: {
+                    categories: sortedDates,
+                    labels: {
+                        rotation: -45,
+                        style: {
+                            fontSize: '10px',
+                            color: '#666'
+                        }
+                    }
+                },
+                yAxis: [{
+                    title: {
+                        text: 'Doanh thu hàng ngày (VND)',
+                        style: {
+                            color: '#00ADB5'
+                        }
+                    },
+                    labels: {
+                        style: {
+                            color: '#00ADB5'
+                        }
+                    }
+                }, {
+                    title: {
+                        text: 'Doanh thu lũy kế (VND)',
+                        style: {
+                            color: '#6EC207'
+                        }
+                    },
+                    opposite: true,
+                    labels: {
+                        style: {
+                            color: '#6EC207'
+                        }
+                    }
+                }],
+                tooltip: {
+                    shared: true,
+                    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                    borderColor: '#AAA',
+                    borderRadius: 10,
+                    shadow: true
+                },
+                legend: {
+                    align: 'right',
+                    verticalAlign: 'top',
+                    floating: true,
+                    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                    borderColor: '#CCC',
+                    borderWidth: 1,
+                    shadow: false,
+                    itemStyle: {
+                        color: '#333',
+                        fontWeight: 'normal'
+                    }
+                },
+                plotOptions: {
+                    column: {
+                        color: '#00ADB5'
+                    },
+                    line: {
+                        color: '#6EC207'
+                    }
+                },
+                series: [{
+                    name: 'Doanh thu hàng ngày',
+                    data: sortedDates.map(date => revenueByDate[date]),
+                    tooltip: {
+                        valuePrefix: '₫'
+                    }
+                }, {
+                    name: 'Doanh thu lũy kế',
+                    type: 'line',
+                    yAxis: 1,
+                    data: cumulativeData,
+                    tooltip: {
+                        valuePrefix: '₫'
+                    }
+                }]
+            });
+
+            const genderDistribution = data.reduce((acc, record) => {
+                const gender = record['Giới tính'] || 'Không xác định';
+                acc[gender] = (acc[gender] || 0) + 1;
+                return acc;
+            }, {});
+
+            Highcharts.chart('genderChart', {
+                chart: { type: 'pie' },
+                title: { text: 'Tình trạng tái khám' },
+
+                colors: ['#FF9999', '#66B2FF', '#99FF99', '#FFCC66', '#FF66B2'], // Thêm màu sắc tùy chỉnh
+
+                plotOptions: {
+                    pie: {
+                        allowPointSelect: true,
+                        borderWidth: 2,
+                        cursor: 'pointer',
+                        dataLabels: {
+                            enabled: true,
+                            format: '<b>{point.name}</b><br>{point.percentage:.1f}%',
+                            distance: 20
+                        }
+                    }
+                },
+                series: [{
+                    name: 'Số lượng',
+                    data: Object.entries(genderDistribution).map(([name, y]) => ({ name, y }))
+                }]
+            });
+
+
+        }
+
+        function initializeFilters() {
+            const doctorFilter = document.getElementById('doctorFilter');
+            const dateRangeFilter = document.getElementById('dateRangeFilter');
+            const diagnosisFilter = document.getElementById('diagnosisFilter');
+
+            // Populate doctor filter
+            const doctors = [...new Set(allData.map(record => record['Bác sỹ']))];
+            doctors.forEach(doctor => {
+                const option = document.createElement('option');
+                option.value = doctor;
+                option.textContent = doctor;
+                doctorFilter.appendChild(option);
+            });
+
+            // Populate date range filter
+            const dates = [...new Set(allData.map(record => moment(record['Ngày khám'], 'MM/DD/YYYY HH:mm:ss').format('YYYY-MM')))];
+            dates.sort((a, b) => moment(b) - moment(a));
+            dates.forEach(date => {
+                const option = document.createElement('option');
+                option.value = date;
+                option.textContent = date;
+                dateRangeFilter.appendChild(option);
+            });
+
+            // Populate diagnosis filter
+            const diagnoses = [...new Set(allData.map(record => record['Chuẩn đoán']))];
+            diagnoses.forEach(diagnosis => {
+                const option = document.createElement('option');
+                option.value = diagnosis;
+                option.textContent = diagnosis;
+                diagnosisFilter.appendChild(option);
+            });
+
+            // Add event listeners
+            doctorFilter.addEventListener('change', applyFilters);
+            dateRangeFilter.addEventListener('change', applyFilters);
+            diagnosisFilter.addEventListener('change', applyFilters);
+            document.getElementById('resetFilters').addEventListener('click', resetFilters);
+        }
+
+        function applyFilters() {
+            const doctorValue = document.getElementById('doctorFilter').value;
+            const dateValue = document.getElementById('dateRangeFilter').value;
+            const diagnosisValue = document.getElementById('diagnosisFilter').value;
+
+            filteredData = allData.filter(record => {
+                return (!doctorValue || record['Bác sỹ'] === doctorValue) &&
+                    (!dateValue || moment(record['Ngày khám'], 'MM/DD/YYYY HH:mm:ss').format('YYYY-MM') === dateValue) &&
+                    (!diagnosisValue || record['Chuẩn đoán'] === diagnosisValue);
+            });
+
+            updateDashboard();
+        }
+
+        function resetFilters() {
+            document.getElementById('doctorFilter').value = '';
+            document.getElementById('dateRangeFilter').value = '';
+            document.getElementById('diagnosisFilter').value = '';
+            filteredData = allData;
+            updateDashboard();
+        }
+
+        // Initialize the dashboard
+        (async function init() {
+            try {
+                allData = await fetchDataFromAppSheet();
+                filteredData = allData;
+                initializeFilters();
+                updateDashboard();
+                initializeDarkMode();
+            } catch (error) {
+                console.error("Lỗi khởi tạo dashboard:", error);
+            }
+        })();
+        function updateExtendedDashboard() {
+            const data = filteredData.length > 0 ? filteredData : allData;
+
+            // Cập nhật các số liệu hiện có
+            document.getElementById('totalPatients').textContent = data.length;
+            const totalRevenue = data.reduce((sum, record) => sum + parseInt(record['Tổng'] || 0), 0);
+            document.getElementById('totalRevenue').textContent = formatCurrency(totalRevenue);
+
+            // Thêm các số liệu mới
+            updateAgeDistribution(data);
+            updateWeightHeightDistribution(data);
+            updateDoctorPerformance(data);
+            updateDiagnosisDistribution(data);
+            updateRevenueBreakdown(data);
+            updateTimeOfDayDistribution(data);
+        }
+        function updateAgeDistribution(data) {
+            const ageGroups = {
+                '0-18': 0, '19-30': 0, '31-50': 0, '51-70': 0, '70+': 0
+            };
+            data.forEach(record => {
+                const age = parseInt(record['Tuổi'].split(' ')[0]);
+                if (age <= 18) ageGroups['0-18']++;
+                else if (age <= 30) ageGroups['19-30']++;
+                else if (age <= 50) ageGroups['31-50']++;
+                else if (age <= 70) ageGroups['51-70']++;
+                else ageGroups['70+']++;
+            });
+
+            Highcharts.chart('ageDistributionChart', {
+                chart: { type: 'column' },
+                title: { text: 'Phân bố độ tuổi bệnh nhân' },
+                xAxis: { categories: Object.keys(ageGroups) },
+                yAxis: { title: { text: 'Số lượng bệnh nhân' } },
+                series: [{
+                    name: 'Số lượng',
+                    data: Object.values(ageGroups)
+                }]
+            });
+        }
+        function updateWeightHeightDistribution(data) {
+            const weightHeightData = data.map(record => {
+                const [height, weight] = record['Chiều cao cân nặng'].split('-').map(str => parseInt(str.match(/\d+/)[0]));
+                return [height, weight];
+            });
+
+            Highcharts.chart('weightHeightChart', {
+                chart: { type: 'scatter' },
+                title: { text: 'Phân bố chiều cao và cân nặng' },
+                xAxis: { title: { text: 'Chiều cao (cm)' } },
+                yAxis: { title: { text: 'Cân nặng (kg)' } },
+                series: [{
+                    name: 'Bệnh nhân',
+                    data: weightHeightData
+                }]
+            });
+        }
+        function updateDoctorPerformance(data) {
+            const doctorPerformance = data.reduce((acc, record) => {
+                const doctor = record['Bác sỹ'];
+                if (!acc[doctor]) acc[doctor] = { patients: 0, revenue: 0 };
+                acc[doctor].patients++;
+                acc[doctor].revenue += parseInt(record['Tổng'] || 0);
+                return acc;
+            }, {});
+
+            const chartData = Object.entries(doctorPerformance).map(([name, stats]) => ({
+                name,
+                y: stats.patients,
+                revenue: stats.revenue
+            }));
+
+            Highcharts.chart('doctorPerformanceChart', {
+                chart: { type: 'column' },
+                title: { text: 'Hiệu suất bác sĩ' },
+                xAxis: { type: 'category' },
+                yAxis: [
+                    { title: { text: 'Số lượng bệnh nhân' } },
+                    { title: { text: 'Doanh thu' }, opposite: true }
+                ],
+                series: [
+                    { name: 'Số lượng bệnh nhân', data: chartData },
+                    { name: 'Doanh thu', data: chartData.map(item => item.revenue), yAxis: 1 }
+                ]
+            });
+        }
+        function updateDiagnosisDistribution(data) {
+            const diagnosisCounts = data.reduce((acc, record) => {
+                const diagnosis = record['Chuẩn đoán'] || 'Không xác định';
+                acc[diagnosis] = (acc[diagnosis] || 0) + 1;
+                return acc;
+            }, {});
+
+            const chartData = Object.entries(diagnosisCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            Highcharts.chart('diagnosisDistributionChart', {
+                chart: { type: 'bar' },
+                title: { text: 'Top 10 chuẩn đoán phổ biến' },
+                xAxis: { type: 'category' },
+                yAxis: { title: { text: 'Số lượng bệnh nhân' } },
+                series: [{
+                    name: 'Số lượng',
+                    data: chartData
+                }]
+            });
+        }
+        function updateRevenueBreakdown(data) {
+            const totalRevenue = data.reduce((sum, record) => sum + parseInt(record['Tổng'] || 0), 0);
+            const medicineRevenue = data.reduce((sum, record) => sum + parseInt(record['Doanh thu thuốc'] || 0), 0);
+            const serviceRevenue = data.reduce((sum, record) => sum + parseInt(record['Doanh thu dịch vụ'] || 0), 0);
+
+            Highcharts.chart('revenueBreakdownChart', {
+                chart: { type: 'pie' },
+                title: { text: 'Phân tích doanh thu' },
+                series: [{
+                    name: 'Doanh thu',
+                    data: [
+                        { name: 'Thuốc', y: medicineRevenue },
+                        { name: 'Dịch vụ', y: serviceRevenue }
+                    ]
+                }]
+            });
+        }
+
+        function updateTimeOfDayDistribution(data) {
+            const timeDistribution = { 'Sáng': 0, 'Chiều': 0, 'Tối': 0 };
+            data.forEach(record => {
+                const ca = record['Ca'];
+                if (ca in timeDistribution) timeDistribution[ca]++;
+            });
+
+            Highcharts.chart('timeOfDayChart', {
+                chart: { type: 'column' },
+                title: { text: 'Phân bố thời gian khám' },
+                xAxis: { categories: Object.keys(timeDistribution) },
+                yAxis: { title: { text: 'Số lượng bệnh nhân' } },
+                series: [{
+                    name: 'Số lượng',
+                    data: Object.values(timeDistribution)
+                }]
+            });
+        }
+
+    </script>
+</body>
+
+</html>
