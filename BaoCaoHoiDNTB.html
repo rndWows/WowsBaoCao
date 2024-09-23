@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thống kê hội doanh nhân thái bình</title>
+    <link rel="shortcut icon" href="https://ninhpoal.github.io/goalapp/assets/img/logos/logo.png" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/10.3.3/highcharts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+</head>
+<script>
+    tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                colors: {
+                    primary: '#3B82F6',
+                    secondary: '#10B981',
+                    accent: '#8B5CF6',
+                    warning: '#FBBF24',
+                    danger: '#EF4444',
+                }
+            }
+        }
+    }
+</script>
+
+<body class="bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
+    <div class="fixed top-0 left-0 right-0 z-10">
+        <nav class="bg-white dark:bg-gray-800 shadow-md">
+            <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+                <div class="flex items-center">
+                    <img src="https://ninhpoal.github.io/goalapp/assets/img/logos/logo.png"
+                        alt="Hội doanh nhân Thái Bình Miền Nam" class="h-10 mr-6">
+                    <h1 class="text-2xl font-bold text-red-700 dark:text-white">HỘI DOANH NHÂN THÁI BÌNH MIỀM NAM</h1>
+                </div>
+                <button id="darkModeToggle"
+                    class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 transition-colors duration-300">
+                    <i class="fas fa-moon text-gray-800 dark:text-white"></i>
+                </button>
+            </div>
+        </nav>
+
+        <div class="bg-white dark:bg-gray-800 shadow-md">
+            <div class="container mx-auto px-4 py-3">
+                <h2 class="text-xl font-semibold mb-2 text-gray-800 dark:text-white">Bộ lọc</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <select id="NhomNgangNghe"
+                        class="w-full p-2 border rounded-md bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary transition-all duration-300">
+                        <option value="">Nhóm ngành nghề</option>
+                    </select>
+
+                    <select id="tableFilter"
+                        class="w-full p-2 border rounded-md bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary transition-all duration-300">
+                        <option value="">Chi hội</option>
+                    </select>
+                    <select id="dateRangeFilter"
+                        class="w-full p-2 border rounded-md bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary transition-all duration-300">
+                        <option value="">Chọn phạm vi ngày</option>
+                    </select>
+                    <button id="resetFilters"
+                        class="text-white bg-gradient-to-r from-red-400 via-red-500 to-red-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+                        <i class="fas fa-sync-alt mr-2"></i>Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 mt-36">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-white">Tổng số hội viên</h3>
+                <p id="totalHoiVien" class="text-3xl font-bold text-primary">0</p>
+
+
+
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-white">Tổng giá trị giao thương</h3>
+                <p id="totalGiaoThuong" class="text-3xl font-bold text-secondary">0 ₫</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-white">Số lần giao thương</h3>
+                <p id="countGiaoThuong" class="text-3xl font-bold text-accent">0</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-white">Tổng tiền tài trợ</h3>
+                <p id="taitro" class="text-3xl font-bold text-warning">0 ₫</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Biểu đồ tăng trưởng hội viên</h3>
+                <div id="revenueChart" style="height: 300px;"></div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Top 5 thành viên THÀNH TÍCH GIỚI
+                    THIỆU HỘI VIÊN VÀO HỘI</h3>
+                <div id="employeeTable" style="height: 300px;"></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Phân bố hội viên theo nhóm ngành
+                    nghề</h3>
+                <div id="tableChart" style="height: 300px;"></div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Top 5 nhóm ngành nghề phổ biến nhất
+                </h3>
+                <div id="trendTable" style="height: 300px;"></div>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-1 gap-8 mb-8">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Giá trị giao thương theo thời gian
+                </h3>
+                <div id="giaothuongChart" style="height: 300px;"></div>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Danh sách trao cơ hội
+                </h3>
+                <div id="traocohoiTable" style="height: 300px;"></div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Danh sách nhận cơ hội
+                </h3>
+                <div id="traocohoiTable" style="height: 300px;"></div>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-1 gap-8 mb-8">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Xu hướng tài trợ theo tháng</h3>
+                <div id="taiTroChart" style="height: 300px;"></div>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-1 gap-8 mb-8">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Danh sách tài trợ gần đây</h3>
+                <table class="min-w-full">
+                    <thead>
+                        <tr>
+                            <th
+                                class="py-2 px-4 bg-gray-100 dark:bg-gray-700 font-semibold text-gray-600 dark:text-gray-200 text-left">
+                                Ngày</th>
+                            <th
+                                class="py-2 px-4 bg-gray-100 dark:bg-gray-700 font-semibold text-gray-600 dark:text-gray-200 text-left">
+                                Người nộp</th>
+                            <th
+                                class="py-2 px-4 bg-gray-100 dark:bg-gray-700 font-semibold text-gray-600 dark:text-gray-200 text-left">
+                                Công ty</th>
+                            <th
+                                class="py-2 px-4 bg-gray-100 dark:bg-gray-700 font-semibold text-gray-600 dark:text-gray-200 text-left">
+                                Số tiền</th>
+                            <th
+                                class="py-2 px-4 bg-gray-100 dark:bg-gray-700 font-semibold text-gray-600 dark:text-gray-200 text-left">
+                                Nội dung</th>
+                        </tr>
+                    </thead>
+                    <tbody id="taiTroTableBody">
+                        <!-- Dữ liệu sẽ được thêm vào đây bằng JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Existing JavaScript code...
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const htmlElement = document.documentElement;
+        const appId = '4dc0f883-9c1c-4d4a-81aa-4bd7971b78dd';
+        const accessKey = 'V2-W3bVS-xCeBf-DSk9A-U3pVV-B5C41-0gBhu-Z1bQL-j6kNl';
+        const region = 'www';
+
+        let danhSachHoiVien = [];
+        let danhsachGiaothuong = [];
+        let danhsachtaitro = [];
+        // Function to toggle dark mode
+        function toggleDarkMode() {
+            htmlElement.classList.toggle('dark');
+
+            // Optional: Save the user's preference
+            const isDarkMode = htmlElement.classList.contains('dark');
+            localStorage.setItem('darkMode', isDarkMode);
+
+            // Update the icon
+            updateDarkModeIcon();
+        }
+
+        // Function to update the icon based on the current mode
+        function updateDarkModeIcon() {
+            const isDarkMode = htmlElement.classList.contains('dark');
+            darkModeToggle.innerHTML = isDarkMode
+                ? '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>'
+                : '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-800 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>';
+        }
+
+        // Add click event listener to the toggle button
+        darkModeToggle.addEventListener('click', toggleDarkMode);
+        function apiRequest(tableName, action, data) {
+            const apiUrl = `https://${region}.appsheet.com/api/v2/apps/${appId}/tables/${tableName}/Action`;
+            return fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'ApplicationAccessKey': accessKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    Action: action,
+                    Properties: {},
+                    ...data
+                })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+
+                    return data;
+                })
+                .catch(error => {
+                    console.error("Lỗi API:", error);
+                    throw error;
+                });
+        }
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        }
+
+
+
+        async function DanhSachHV() {
+            try {
+                const response = await apiRequest('HV_NCC_KH', 'Find', {
+                    Selector: "Filter(HV_NCC_KH, true)"
+                });
+                if (!Array.isArray(response) || response.length === 0) {
+                    throw new Error("Dữ liệu không hợp lệ");
+                }
+                return response;
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        async function DanhSachGiaoThuong() {
+            try {
+                const response = await apiRequest('Lich su ket noi', 'Find', {
+                    Selector: "Filter(Lich su ket noi, true)"
+                });
+                if (!Array.isArray(response) || response.length === 0) {
+                    throw new Error("Dữ liệu không hợp lệ");
+                }
+                return response;
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        async function DanhSachTaiTro() {
+            try {
+                const response = await apiRequest('THU CHI TON QUY', 'Find', {
+                    Selector: `Filter(THU CHI TON QUY, true)`
+                });
+                if (!Array.isArray(response) || response.length === 0) {
+                    throw new Error("Dữ liệu không hợp lệ");
+                }
+                return response;
+            } catch (error) {
+                throw error;
+            }
+        }
+        function updateHoiVienStats() {
+            // Cập nhật tổng số hội viên
+            const totalHoiVien = danhSachHoiVien.length;
+            document.getElementById('totalHoiVien').textContent = totalHoiVien;
+        }
+
+        function updateFilters() {
+            // Cập nhật bộ lọc Chi hội
+            const chiHoiSet = new Set(danhSachHoiVien.map(hv => hv['Chi hội']));
+            const chiHoiFilter = document.getElementById('tableFilter');
+            chiHoiFilter.innerHTML = '<option value="">Chi hội</option>';
+            chiHoiSet.forEach(chiHoi => {
+                const option = document.createElement('option');
+                option.value = chiHoi;
+                option.textContent = chiHoi;
+                chiHoiFilter.appendChild(option);
+            });
+
+            // Cập nhật bộ lọc Nhóm ngành nghề
+            const nhomNganhNgheSet = new Set(danhSachHoiVien.map(hv => hv['Nhóm ngành nghề']));
+            const nhomNganhNgheFilter = document.getElementById('NhomNgangNghe');
+            nhomNganhNgheFilter.innerHTML = '<option value="">Nhóm ngành nghề</option>';
+            nhomNganhNgheSet.forEach(nhomNganhNghe => {
+                const option = document.createElement('option');
+                option.value = nhomNganhNghe;
+                option.textContent = nhomNganhNghe;
+                nhomNganhNgheFilter.appendChild(option);
+            });
+        }
+
+        function createChiHoiChart() {
+            const chiHoiData = danhSachHoiVien.reduce((acc, hv) => {
+                acc[hv['Nhóm ngành nghề']] = (acc[hv['Nhóm ngành nghề']] || 0) + 1;
+                return acc;
+            }, {});
+
+            const data = Object.entries(chiHoiData).map(([name, y]) => ({ name, y }));
+
+            Highcharts.chart('tableChart', {
+                chart: {
+                    type: 'pie'
+                },
+                title: {
+                    text: 'Phân bố hội viên theo nhóm ngành nghề'
+                },
+                series: [{
+                    name: 'Số lượng hội viên',
+                    data: data
+                }]
+            });
+        }
+
+        function updateGiaoThuongStats() {
+            // Cập nhật tổng giá trị giao thương
+            const totalGiaoThuong = danhsachGiaothuong.reduce((sum, gt) => sum + parseFloat(gt['Giá trị hợp đồng'] || 0), 0);
+            document.getElementById('totalGiaoThuong').textContent = formatCurrency(totalGiaoThuong);
+
+            // Cập nhật số lần giao thương
+            const countGiaoThuong = danhsachGiaothuong.length;
+            document.getElementById('countGiaoThuong').textContent = countGiaoThuong;
+        }
+
+        function createGiaoThuongChart() {
+            // Sắp xếp dữ liệu theo ngày
+            const sortedData = danhsachGiaothuong.sort((a, b) => new Date(a.Ngày) - new Date(b.Ngày));
+
+            // Tạo dữ liệu cho biểu đồ
+            const chartData = sortedData.map(gt => ({
+                x: new Date(gt.Ngày).getTime(),
+                y: parseFloat(gt['Giá trị hợp đồng'] || 0)
+            }));
+
+            Highcharts.chart('giaothuongChart', {
+                chart: {
+                    type: 'line'
+                },
+                title: {
+                    text: 'Giá trị giao thương theo thời gian'
+                },
+                xAxis: {
+                    type: 'datetime',
+                    title: {
+                        text: 'Ngày'
+                    }
+                },
+                yAxis: {
+                    title: {
+                        text: 'Giá trị hợp đồng (VNĐ)'
+                    }
+                },
+                series: [{
+                    name: 'Giá trị giao thương',
+                    data: chartData
+                }]
+            });
+        }
+        function filterTaiTro(danhsachtaitro) {
+            return danhsachtaitro.filter(tt =>
+                tt['Phân loại'] === 'Thu' &&
+                (tt['Nhóm thu chi'] === 'Thu Tài trợ VHTT' || tt['Nhóm thu chi'] === 'Tiền tài trợ XTTM')
+            );
+        }
+
+        function updateTaiTroStats() {
+            const filteredTaiTro = filterTaiTro(danhsachtaitro);
+            // Cập nhật tổng tiền tài trợ
+            const totalTaiTro = filteredTaiTro.reduce((sum, tt) => sum + parseFloat(tt['Số tiền'] || 0), 0);
+            document.getElementById('taitro').textContent = formatCurrency(totalTaiTro);
+        }
+
+        function createTaiTroTable() {
+            const tableBody = document.getElementById('taiTroTableBody');
+            tableBody.innerHTML = '';
+
+            const filteredTaiTro = filterTaiTro(danhsachtaitro);
+
+            // Sắp xếp danh sách tài trợ theo ngày giảm dần
+            const sortedTaiTro = filteredTaiTro.sort((a, b) => new Date(b['Ngày chứng từ']) - new Date(a['Ngày chứng từ']));
+
+            // Hiển thị 5 tài trợ gần nhất
+            sortedTaiTro.slice(0, 5).forEach(tt => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+            <td class="py-2 px-4 border-b">${tt['Ngày chứng từ']}</td>
+            <td class="py-2 px-4 border-b">${tt['Người nộp tiền']}</td>
+            <td class="py-2 px-4 border-b">${tt['Tên công ty']}</td>
+            <td class="py-2 px-4 border-b">${formatCurrency(parseFloat(tt['Số tiền']))}</td>
+            <td class="py-2 px-4 border-b">${tt['Nhóm thu chi']}</td>
+        `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function createTaiTroChart() {
+            const filteredTaiTro = filterTaiTro(danhsachtaitro);
+
+            // Tạo dữ liệu cho biểu đồ
+            const chartData = filteredTaiTro.reduce((acc, tt) => {
+                const date = new Date(tt['Ngày chứng từ']);
+                const month = date.getMonth();
+                const year = date.getFullYear();
+                const key = `${year}-${month + 1}`;
+                if (!acc[key]) {
+                    acc[key] = 0;
+                }
+                acc[key] += parseFloat(tt['Số tiền'] || 0);
+                return acc;
+            }, {});
+
+            const series = Object.entries(chartData).map(([key, value]) => {
+                const [year, month] = key.split('-');
+                return [Date.UTC(parseInt(year), parseInt(month) - 1), value];
+            }).sort((a, b) => a[0] - b[0]);
+
+            Highcharts.chart('taiTroChart', {
+                chart: {
+                    type: 'column'
+                },
+                title: {
+                    text: 'Xu hướng tài trợ theo tháng'
+                },
+                xAxis: {
+                    type: 'datetime',
+                    labels: {
+                        format: '{value:%Y-%m}'
+                    }
+                },
+                yAxis: {
+                    title: {
+                        text: 'Tổng tiền tài trợ (VNĐ)'
+                    }
+                },
+                series: [{
+                    name: 'Tiền tài trợ',
+                    data: series
+                }]
+            });
+        }
+        function createTop5NhomNganhNgheChart() {
+            // Đếm số lượng hội viên cho mỗi nhóm ngành nghề
+            const nhomNganhNgheCounts = danhSachHoiVien.reduce((acc, hv) => {
+                const nhomNganhNghe = hv['Nhóm ngành nghề'];
+                if (nhomNganhNghe) {
+                    acc[nhomNganhNghe] = (acc[nhomNganhNghe] || 0) + 1;
+                }
+                return acc;
+            }, {});
+
+            // Sắp xếp và lấy top 5
+            const top5NhomNganhNghe = Object.entries(nhomNganhNgheCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            // Tạo dữ liệu cho biểu đồ
+            const chartData = top5NhomNganhNghe.map(([name, count]) => ({
+                name: name,
+                y: count
+            }));
+
+            // Tạo biểu đồ
+            Highcharts.chart('trendTable', {
+                chart: {
+                    type: 'bar'
+                },
+                title: {
+                    text: 'Top 5 nhóm ngành nghề phổ biến nhất'
+                },
+                xAxis: {
+                    type: 'category'
+                },
+                yAxis: {
+                    title: {
+                        text: 'Số lượng hội viên'
+                    }
+                },
+                legend: {
+                    enabled: false
+                },
+                plotOptions: {
+                    series: {
+                        borderWidth: 0,
+                        dataLabels: {
+                            enabled: true,
+                            format: '{point.y}'
+                        }
+                    }
+                },
+                series: [{
+                    name: 'Số lượng hội viên',
+                    colorByPoint: true,
+                    data: chartData
+                }]
+            });
+        }
+        function initializeDashboard() {
+            updateHoiVienStats();
+            updateGiaoThuongStats();
+            updateTaiTroStats();
+            updateFilters();
+            createChiHoiChart();
+            createGiaoThuongChart();
+            createTaiTroTable();
+            createTaiTroChart();
+            createTop5NhomNganhNgheChart();
+        }
+        async function init() {
+            danhSachHoiVien = await DanhSachHV();
+
+            danhsachGiaothuong = await DanhSachGiaoThuong();
+            danhsachtaitro = await DanhSachTaiTro();
+            console.log(danhsachtaitro);
+            console.log(danhsachGiaothuong);
+            console.log(danhSachHoiVien);
+            initializeDashboard();
+
+
+        }
+
+        // Call init function when the page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>
